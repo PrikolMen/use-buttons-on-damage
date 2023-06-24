@@ -2,19 +2,21 @@ install( "packages/glua-extensions", "https://github.com/Pika-Software/glua-exte
 
 local IsValid = IsValid
 
-local function findButton( ent, blacklist )
-    if not IsValid( ent ) then return end
+local function findButton( entity, blacklist )
+    if not IsValid( entity ) then return end
+    if blacklist[ entity ] then return end
+    blacklist[ entity ] = true
 
-    if not blacklist then blacklist = {} end
-    if blacklist[ ent ] then return end
-    blacklist[ ent ] = true
+    if entity:IsButton() then
+        return entity
+    end
 
-    if ent:IsButton() then return ent end
-    return findButton( ent:GetParent(), blacklist )
+    return findButton( entity:GetParent(), blacklist )
 end
 
-hook.Add( "EntityTakeDamage", "Activate Buttons on Damage", function( entity, dmg )
-    local button = findButton( entity )
-    if not IsValid( button ) then return end
-    button:Use( dmg:GetAttacker(), dmg:GetInflictor() )
+hook.Add( "EntityTakeDamage", "Entity Damaged", function( entity, damageInfo )
+    local button = findButton( entity, {} )
+    if not button then return end
+
+    button:Use( damageInfo:GetAttacker(), damageInfo:GetInflictor() )
 end )
